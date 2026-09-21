@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Series Diary</title>
+<link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;600;700&family=Prompt:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--p:#e995b4;--pk:#f8d4e0;--c:#fff9f1;--o:#aab58c;--b:#6a564e}
+*{box-sizing:border-box}body{margin:0;font-family:Prompt,sans-serif;color:var(--b);background:linear-gradient(145deg,#fffaf5,#fff1f5,#f5f2e7);min-height:100vh}
+.wrap{width:min(1120px,94%);margin:auto;padding:28px 0 60px}h1,h2{font-family:Mali,cursive;color:#ad607d}h1{font-size:clamp(34px,5vw,56px);margin:5px 0}.sub{color:#8b766d}.top,.room,.panel{background:#fffdfbcc;border:1px solid #fff;border-radius:24px;box-shadow:0 12px 35px #93627124}.top{padding:18px;margin-bottom:18px}
+.statusbar{display:flex;gap:8px;flex-wrap:wrap}.pill{padding:7px 10px;border-radius:999px;background:#fff;font-size:12px}.online{color:#68764f}.offline{color:#b05e79}
+.room{padding:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin-bottom:18px}.grow{flex:1;min-width:220px}
+.layout{display:grid;grid-template-columns:320px 1fr;gap:20px}.panel{padding:18px}.side{position:sticky;top:12px}
+label{display:block;font-size:12px;margin:12px 0 5px}input,select,button{font:inherit}input,select{width:100%;padding:11px 12px;border:1px solid #eaded8;border-radius:14px;background:#fff}
+button{border:0;border-radius:14px;padding:10px 13px;cursor:pointer;font-weight:600}.pink{background:linear-gradient(135deg,#e997b5,#c97b9a);color:#fff}.soft{background:#f1f4e7;color:#6d7955}.danger{background:#fff0f4;color:#b56380}
+.upload{border:2px dashed #efbfd0;border-radius:16px;padding:14px;text-align:center;background:#fff7fa;cursor:pointer}.upload input{display:none}#preview{display:none;width:100%;height:155px;object-fit:cover;border-radius:12px;margin-top:8px}
+.toolbar,.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.toolbar input{flex:1;min-width:180px}.toolbar select{width:170px}.fbtn{font-size:11px;background:#fff;border:1px solid #eadfda;color:#80695f}.fbtn.active{background:#fff0f5;border-color:#e5a0ba;color:#a75475}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.card{background:#fff;border:1px solid #f0e4df;border-radius:18px;overflow:hidden}.cover{height:170px;background:linear-gradient(145deg,#fbe2eb,#eef0de);position:relative;display:grid;place-items:center}.cover img{width:100%;height:100%;object-fit:cover}.badge{position:absolute;right:8px;top:8px;background:#ffffffee;border-radius:999px;padding:5px 8px;font-size:10px}.body{padding:12px}.title{font-family:Mali,cursive;font-weight:700;color:#805367;margin:0 0 4px}.meta{font-size:11px;color:#88746b;margin-bottom:8px}.watch{display:inline-block;text-decoration:none;background:#f1f4e7;color:#6d7955;padding:6px 8px;border-radius:10px;font-size:11px;margin-bottom:8px}.empty{text-align:center;padding:45px 10px;grid-column:1/-1}
+@media(max-width:900px){.layout{grid-template-columns:1fr}.side{position:static}.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:600px){.grid{grid-template-columns:1fr}.toolbar{flex-direction:column}.toolbar select{width:100%}}
+</style>
+</head>
+<body><main class="wrap">
+<section class="top"><div id="sync" class="pill offline">● กำลังเชื่อมต่อ...</div><h1>บันทึกซีรีส์ของเรา 🌷</h1><div class="sub">แชร์ลิงก์เดียวกัน แล้วดูรายการเดียวกันแบบเรียลไทม์</div><div class="statusbar" style="margin-top:12px">
+<span class="pill">▶ กำลังดู <b id="cw">0</b></span><span class="pill">✓ ดูจบ <b id="cd">0</b></span><span class="pill">☕ ดองไว้ <b id="ch">0</b></span><span class="pill">♡ อยากดู <b id="cl">0</b></span>
+</div></section>
+<section class="room"><div class="grow"><label>ห้องแชร์</label><input id="room" placeholder="series-xxxx"></div><button id="enter" class="soft">เข้าห้อง</button><button id="newroom" class="soft">สร้างห้องสุ่ม</button><button id="share" class="pink">คัดลอกลิงก์แชร์</button></section>
+<div class="layout"><aside class="panel side"><h2>＋ เพิ่มซีรีส์</h2>
+<label>ชื่อซีรีส์</label><input id="title" placeholder="เช่น Queen of Tears">
+<label>ช่องทางรับชม</label><select id="platform"><option>Netflix</option><option>Disney+</option><option>Viu</option><option>iQIYI</option><option>WeTV</option><option>Prime Video</option><option>YouTube</option><option>อื่นๆ</option></select>
+<label>ลิงก์รับชม</label><input id="url" placeholder="https://...">
+<label>สถานะ</label><select id="status"><option value="watching">▶ กำลังดู</option><option value="done">✓ ดูจบแล้ว</option><option value="hold">☕ ดองไว้</option><option value="wishlist">♡ อยากดู</option></select>
+<label>ภาพตัวอย่าง</label><label class="upload">🖼️ เลือกภาพ<input id="image" type="file" accept="image/*"><img id="preview"></label>
+<button id="add" class="pink" style="width:100%;margin-top:14px">บันทึก ♡</button></aside>
+<section class="panel"><div class="toolbar"><input id="search" placeholder="ค้นหาซีรีส์..."><select id="filter"><option value="all">ทุกสถานะ</option><option value="watching">กำลังดู</option><option value="done">ดูจบแล้ว</option><option value="hold">ดองไว้</option><option value="wishlist">อยากดู</option></select></div>
+<div class="filters"><button class="fbtn active" data-f="all">ทั้งหมด</button><button class="fbtn" data-f="watching">กำลังดู</button><button class="fbtn" data-f="done">ดูจบแล้ว</button><button class="fbtn" data-f="hold">ดองไว้</button><button class="fbtn" data-f="wishlist">อยากดู</button></div><div id="grid" class="grid"></div></section></div>
+</main>
+<script type="module">
+import{firebaseConfig}from'./firebase-config.js';
+import{initializeApp}from'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
+import{getAuth,signInAnonymously,onAuthStateChanged}from'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
+import{getFirestore,collection,addDoc,doc,updateDoc,deleteDoc,onSnapshot,query,orderBy,serverTimestamp}from'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
+const S={watching:['▶','กำลังดู'],done:['✓','ดูจบแล้ว'],hold:['☕','ดองไว้'],wishlist:['♡','อยากดู']},$=x=>document.getElementById(x);
+let db,off,items=[],img='',room=new URLSearchParams(location.search).get('room')||localStorage.getItem('seriesRoom')||rnd();$('room').value=room;
+function rnd(){let a=crypto.getRandomValues(new Uint32Array(2));return'series-'+a[0].toString(36)+a[1].toString(36)}
+function clean(v){return String(v).trim().toLowerCase().replace(/[^a-z0-9_-]/g,'-').replace(/-+/g,'-').slice(0,60)}
+function setRoom(r){room=clean(r)||rnd();$('room').value=room;let u=new URL(location.href);u.searchParams.set('room',room);history.replaceState({},'',u);localStorage.setItem('seriesRoom',room)}
+function safe(v=''){v=v.trim();if(!v)return'';if(!/^https?:\/\//i.test(v))v='https://'+v;try{let u=new URL(v);return/^https?:$/.test(u.protocol)?u.href:''}catch{return''}}
+function esc(v=''){return String(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+async function compress(f){let d=await new Promise((r,j)=>{let x=new FileReader;x.onload=()=>r(x.result);x.onerror=j;x.readAsDataURL(f)}),im=await new Promise((r,j)=>{let x=new Image;x.onload=()=>r(x);x.onerror=j;x.src=d}),s=Math.min(1,850/im.width),c=document.createElement('canvas');c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.72)}
+function openRoom(){if(off)off();setRoom(room);off=onSnapshot(query(collection(db,'rooms',room,'series'),orderBy('createdAt','desc')),s=>{items=s.docs.map(d=>({id:d.id,...d.data()}));render()})}
+if(firebaseConfig.apiKey&&firebaseConfig.apiKey!=='PASTE_API_KEY_HERE'){let app=initializeApp(firebaseConfig),auth=getAuth(app);db=getFirestore(app);await signInAnonymously(auth);onAuthStateChanged(auth,u=>{if(u){$('sync').textContent='● เชื่อมต่อแล้ว';$('sync').className='pill online';openRoom()}})}else{$('sync').textContent='● ยังไม่ได้ตั้งค่า Firebase';alert('ยังไม่ได้ใส่ค่า Firebase ใน firebase-config.js')}
+$('enter').onclick=()=>{if(!db)return alert('ตั้งค่า Firebase ก่อน');room=clean($('room').value);openRoom()};
+$('newroom').onclick=()=>{room=rnd();setRoom(room);if(db)openRoom()};
+$('share').onclick=async()=>{setRoom($('room').value||room);try{await navigator.clipboard.writeText(location.href);$('share').textContent='✓ คัดลอกแล้ว';setTimeout(()=>$('share').textContent='คัดลอกลิงก์แชร์',1400)}catch{prompt('คัดลอกลิงก์นี้',location.href)}};
+$('image').onchange=async e=>{let f=e.target.files[0];if(!f)return;img=await compress(f);$('preview').src=img;$('preview').style.display='block'};
+$('add').onclick=async()=>{if(!db)return alert('ตั้งค่า Firebase ก่อน');let t=$('title').value.trim();if(!t)return alert('ใส่ชื่อซีรีส์ก่อน');let u=safe($('url').value);if($('url').value.trim()&&!u)return alert('ลิงก์ไม่ถูกต้อง');await addDoc(collection(db,'rooms',room,'series'),{title:t,platform:$('platform').value,watchUrl:u,status:$('status').value,image:img,createdAt:serverTimestamp()});$('title').value='';$('url').value='';$('status').value='watching';$('image').value='';$('preview').style.display='none';img=''};
+window.ch=async(id,v)=>updateDoc(doc(db,'rooms',room,'series',id),{status:v});window.del=async id=>{if(confirm('ลบรายการนี้?'))await deleteDoc(doc(db,'rooms',room,'series',id))};
+function render(){let k=$('search').value.toLowerCase(),f=$('filter').value,a=items.filter(x=>(String(x.title||'').toLowerCase().includes(k)||String(x.platform||'').toLowerCase().includes(k))&&(f==='all'||x.status===f));$('cw').textContent=items.filter(x=>x.status==='watching').length;$('cd').textContent=items.filter(x=>x.status==='done').length;$('ch').textContent=items.filter(x=>x.status==='hold').length;$('cl').textContent=items.filter(x=>x.status==='wishlist').length;$('grid').innerHTML=a.length?a.map(x=>{let s=S[x.status]||S.wishlist,u=safe(x.watchUrl||'');return`<article class="card"><div class="cover">${x.image?`<img src="${esc(x.image)}">`:'🌸'}<span class="badge">${s[0]} ${s[1]}</span></div><div class="body"><h3 class="title">${esc(x.title)}</h3><div class="meta">📺 ${esc(x.platform)}</div>${u?`<a class="watch" target="_blank" rel="noopener" href="${esc(u)}">↗ เปิดลิงก์รับชม</a><br>`:''}<select onchange="ch('${x.id}',this.value)">${Object.entries(S).map(([q,z])=>`<option value="${q}" ${x.status===q?'selected':''}>${z[0]} ${z[1]}</option>`).join('')}</select><button class="danger" style="margin-top:8px;width:100%" onclick="del('${x.id}')">ลบ</button></div></article>`}).join(''):'<div class="empty">🎬 ยังไม่มีซีรีส์ในรายการนี้</div>'}
+$('search').oninput=render;$('filter').onchange=()=>{document.querySelectorAll('.fbtn').forEach(b=>b.classList.toggle('active',b.dataset.f===$('filter').value));render()};document.querySelectorAll('.fbtn').forEach(b=>b.onclick=()=>{$('filter').value=b.dataset.f;document.querySelectorAll('.fbtn').forEach(x=>x.classList.toggle('active',x===b));render()});
+</script></body></html>
