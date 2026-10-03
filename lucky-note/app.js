@@ -161,7 +161,7 @@ window.addCustomCategory=async()=>{
   settings={...settings,[key]:[...(settings[key]||[]),name]};
   await setDoc(doc(db,'users',user.uid,'settings','main'),settings,{merge:true});
   $('newCategory').value='';
-  window.window.updateCats();
+  window.updateCats();
   $('txCategory').value=name;
   window.renderExtras();
   toast('เพิ่มหมวด “'+name+'” แล้ว ✓');
@@ -227,4 +227,4 @@ function renderCal(){
   const y=calDate.getFullYear(),m=calDate.getMonth();$('calTitle').textContent=`${THM[m]} ${y+543}`;$('calHead').innerHTML=['อา','จ','อ','พ','พฤ','ศ','ส'].map(x=>`<div class="sub" style="text-align:center">${x}</div>`).join('');
   const first=new Date(y,m,1),start=new Date(y,m,1-first.getDay()),out=[];for(let i=0;i<42;i++){const d=new Date(start);d.setDate(start.getDate()+i);const iso=d.toISOString().slice(0,10),ct=todos.filter(t=>t.date===iso&&!t.done).length,cx=txs.filter(t=>t.date===iso).length;out.push(`<div class="day ${d.getMonth()!==m?'muted':''} ${iso===today()?'today':''}"><b>${d.getDate()}</b><div class="sub">${ct?'✅ '+ct:''}</div><div class="sub">${cx?'💰 '+cx:''}</div></div>`)}$('calGrid').innerHTML=out.join('');
 }
-updateCats();
+if ($('txType') && $('txCategory')) window.updateCats();
