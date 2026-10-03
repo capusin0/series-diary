@@ -1,10 +1,17 @@
 {
-  "name": "Lucky Note V3",
+  "name": "Lucky Note 🌹",
   "short_name": "Lucky Note",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#fffaf1",
   "theme_color": "#8f9973",
   "description": "Lucky Note online personal finance and receipt tracker",
-  "icons": []
+  "icons": [
+    {
+      "src": "rose-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
 }
