@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#fff8f4">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Lucky Note">
+<title>Lucky Note — iPhone Test</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#fff8f4}iframe{display:block;border:0;width:100%;height:100dvh;background:#fff8f4}
+#loading{position:fixed;inset:0;display:grid;place-items:center;background:#fff8f4;color:#9b6077;font:700 22px system-ui;z-index:9}#loading small{display:block;font-size:12px;color:#9b8b86;text-align:center;margin-top:8px;font-weight:400}
+</style>
+</head>
+<body>
+<div id="loading">Lucky Note 🌷<small>กำลังเปิดเวอร์ชันทดลองบน iPhone...</small></div>
+<iframe id="app" src="../lucky-note/?iphone-test=1" allow="camera; clipboard-read; clipboard-write"></iframe>
+<script>
+const f=document.getElementById('app'),loading=document.getElementById('loading');
+f.addEventListener('load',()=>{
+  try{
+    const d=f.contentDocument;
+    const s=d.createElement('style');
+    s.textContent=`
+      @import url('https://fonts.googleapis.com/css2?family=Mali:wght@400;600;700&family=Prompt:wght@300;400;500;600&display=swap');
+      body{font-family:'Prompt','Noto Sans Thai',system-ui,sans-serif!important;background:#fff9f4!important;padding-top:env(safe-area-inset-top)}
+      .title,.hero h2{font-family:'Mali',cursive!important;color:#a35f7b!important}
+      .app{padding:10px 10px calc(92px + env(safe-area-inset-bottom))!important;max-width:520px!important}
+      .top{margin:2px 2px 10px!important}.brand .logo{width:42px!important;height:42px!important;border-radius:15px!important;font-size:24px!important}.brand .sub,.user-email,.userbox .sync{display:none!important}.userbox .btn{padding:8px 10px!important;font-size:11px!important}.avatar{width:34px!important;height:34px!important}
+      .hero{border-radius:24px!important;margin-bottom:12px!important}.hero-in{padding:18px 16px!important;grid-template-columns:1fr auto!important}.hero h2{font-size:22px!important}.hero .art{font-size:44px!important}.hero .sub{font-size:12px!important}
+      .grid{gap:10px!important}.card{border-radius:20px!important;padding:14px!important;box-shadow:0 8px 24px rgba(115,92,75,.08)!important}.kpi{grid-column:span 6!important;min-height:112px}.kpi .big{font-size:24px!important;margin-top:10px!important}.wide,.side,.all{grid-column:1/-1!important}
+      .nav{position:fixed!important;left:8px!important;right:8px!important;bottom:calc(8px + env(safe-area-inset-bottom))!important;top:auto!important;margin:0!important;padding:6px 5px!important;border-radius:22px!important;background:rgba(255,255,255,.96)!important;border:1px solid #f1e7df!important;box-shadow:0 8px 30px rgba(100,80,70,.12)!important}.nav button{height:55px!important;font-size:10px!important;padding:5px 1px!important}.nav button.active{background:#fff0f4!important;color:#bd5e80!important;box-shadow:none!important}
+      .modal{align-items:flex-end!important;padding:0!important;background:rgba(45,38,34,.34)!important}.modalbox{width:100%!important;max-width:none!important;max-height:92vh!important;border-radius:28px 28px 0 0!important;padding:18px 16px calc(18px + env(safe-area-inset-bottom))!important;box-shadow:0 -12px 40px rgba(0,0,0,.15)!important}
+      .form{grid-template-columns:1fr!important}.full{grid-column:auto!important}input,select,textarea{min-height:46px!important;font-size:16px!important;border-radius:14px!important}.btn{min-height:44px!important}.primary{background:linear-gradient(135deg,#ff7ca5,#ef5f8d)!important}
+      .auth{padding:18px!important;background:linear-gradient(180deg,#fff7f3,#fffdf8)!important}.authbox{padding:24px 18px!important;border-radius:28px!important;text-align:center!important}.authbox .logo{margin:0 auto 14px!important;width:72px!important;height:72px!important;border-radius:24px!important}.authbox .row{justify-content:center!important}.authbox .btn{width:100%!important}
+      table{font-size:12px!important}.thumb{width:72px!important;height:72px!important;border-radius:14px!important}.cal{gap:4px!important}.day{min-height:54px!important;border-radius:11px!important;padding:5px!important}
+    `;
+    d.head.appendChild(s);
+    const nav=d.querySelector('.nav');
+    if(nav&&!d.getElementById('iphoneQuickAdd')){
+      const b=d.createElement('button');b.id='iphoneQuickAdd';b.textContent='+';b.setAttribute('aria-label','เพิ่มรายการ');
+      Object.assign(b.style,{position:'fixed',zIndex:'40',left:'50%',bottom:'calc(23px + env(safe-area-inset-bottom))',transform:'translateX(-50%)',width:'58px',height:'58px',border:'5px solid white',borderRadius:'50%',background:'linear-gradient(135deg,#ff7ca5,#ef5f8d)',color:'white',fontSize:'34px',lineHeight:'1',boxShadow:'0 8px 20px rgba(229,92,137,.30)'});
+      b.onclick=()=>f.contentWindow.openTx();d.body.appendChild(b);
+      const middle=nav.querySelectorAll('button')[2];if(middle)middle.style.visibility='hidden';
+    }
+    loading.style.display='none';
+  }catch(e){loading.style.display='none'}
+});
+</script>
+</body></html>
