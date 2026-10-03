@@ -1,0 +1,23 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Existing Series Diary
+    match /rooms/{roomId}/series/{seriesId} {
+      allow read, create, update, delete: if request.auth != null;
+    }
+
+    // Lucky Note V3: each user can access only their own data
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      match /transactions/{document=**} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+      match /todos/{document=**} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+      match /settings/{document=**} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+  }
+}
