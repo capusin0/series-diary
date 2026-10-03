@@ -145,69 +145,7 @@ window.updateCats=()=>{const arr=$('txType').value==='expense'?EXPENSES:INCOMES;
 window.renderExtras=()=>{const f=FIELDS[$('txCategory').value]||[["detail","รายละเอียดเพิ่มเติม","text"]];$('extraFields').innerHTML=f.map(([k,l,t,o])=>`<div class="field"><label>${l}</label>${t==='select'?`<select data-extra="${k}">${o.map(v=>`<option>${v}</option>`).join('')}</select>`:`<input data-extra="${k}" type="${t}" placeholder="${l}">`}</div>`).join('')};
 
 window.previewFile=e=>{const f=e.target.files?.[0];if(!f)return;if(!f.type.startsWith('image/'))return toast('กรุณาเลือกรูปภาพ');if(f.size>8*1024*1024)return toast('รูปใหญ่เกิน 8 MB');currentFile=f;previewUrl=URL.createObjectURL(f);$('receiptPreview').src=previewUrl;$('receiptBox').classList.remove('hidden')};
-window.clearFile=()=>{currentFile=null;if(previewUrl)URL.revokeObjectURL(previewUrl);previewUrl="";$('receiptFile').value='';$('receiptBox').classList.add('hidden');$('ocrRaw').value='';$('ocrRawWrap').classList.add('hidden');$('ocrStatus').textContent=''};
-function parseOCR(text){
-  const th='๐๑๒๓๔๕๖๗๘๙';
-  text=(text||'').replace(/[๐-๙]/g,d=>String(th.indexOf(d))).replace(/\r/g,'');
-  const clean=s=>(s||'').replace(/\s+/g,' ').trim();
-  const lines=text.split('\n').map(clean).filter(Boolean);
-
-  let amount=null;
-  const amountPatterns=[
-    /(?:ยอดสุทธิ|ยอดรวมทั้งสิ้น|ยอดรวม|รวมเงิน|จำนวนเงิน|ยอดชำระ|total\s*amount|grand\s*total|total|amount)[^\d]{0,30}([\d,]+(?:\.\d{1,2})?)/i,
-    /([\d,]+\.\d{2})\s*(?:บาท|THB|฿)/i
-  ];
-  for(const p of amountPatterns){const m=text.match(p);if(m){const n=parseFloat(m[1].replace(/,/g,''));if(Number.isFinite(n)){amount=n;break}}}
-  if(!amount){
-    const candidates=[...text.matchAll(/(?:^|\s)(\d{1,3}(?:,\d{3})*(?:\.\d{2})|\d+\.\d{2})(?=\s|$|บาท|฿)/gm)]
-      .map(m=>parseFloat(m[1].replace(/,/g,''))).filter(n=>Number.isFinite(n)&&n>0&&n<100000000);
-    if(candidates.length) amount=Math.max(...candidates);
-  }
-
-  let date='';
-  let m=text.match(/\b(20\d{2})[-\/](\d{1,2})[-\/](\d{1,2})\b/);
-  if(m) date=`${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
-  else{
-    m=text.match(/\b(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})\b/);
-    if(m){let y=+m[3];if(y<100)y+=2000;if(y>2400)y-=543;date=`${y}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;}
-  }
-
-  const skip=/(ใบเสร็จ|receipt|tax invoice|เลขที่|ref|reference|วันที่|date|เวลา|time|ยอด|รวม|total|amount|บาท|thb|vat|ภาษี|เงินทอน|change|เงินสด|cash|qr|promptpay|พร้อมเพย์|บัญชี|account|สาขา|branch|tel|โทร)/i;
-  const merchant=lines.find(x=>x.length>=3&&x.length<=70&&!skip.test(x)&&!/^[-\d\s.,:/]+$/.test(x))||'';
-
-  const itemLines=lines.filter(x=>{
-    if(skip.test(x)||x===merchant||x.length<3||x.length>100)return false;
-    return /[ก-๙A-Za-z]/.test(x) && /\d/.test(x);
-  }).slice(0,8);
-  const details=itemLines.join(' • ');
-  return {amount,date,merchant,details,raw:text};
-}
-window.scanReceipt=async()=>{
-  if(!currentFile)return toast('เลือกรูปก่อน');$('ocrStatus').innerHTML='<span class="spinner"></span> กำลังอ่านข้อความ';
-  try{
-    const r=await Tesseract.recognize(currentFile,'tha+eng',{logger:m=>{if(m.status==='recognizing text')$('ocrStatus').textContent=`อ่านข้อความ ${Math.round((m.progress||0)*100)}%`}});
-    const p=parseOCR(r.data.text);
-    const raw=(p.raw||'').trim();
-    const thaiCount=(raw.match(/[ก-๙]/g)||[]).length;
-    const latinCount=(raw.match(/[A-Za-z]/g)||[]).length;
-    const digitCount=(raw.match(/[0-9]/g)||[]).length;
-    const useful=thaiCount+latinCount+digitCount;
-    $('ocrRaw').value=raw;
-    $('ocrRawWrap').classList.remove('hidden');
-    // Auto-fill only high-confidence structured values. Never copy a guessed merchant/nonsense text into note.
-    if(p.amount && p.amount>0)$('txAmount').value=p.amount.toFixed(2);
-    if(p.date)$('txDate').value=p.date;
-    const autoDetail=[p.merchant,p.details].filter(Boolean).join(' — ');
-    if(autoDetail)$('txNote').value=autoDetail;
-    if(useful<8){
-      $('ocrStatus').textContent='อ่านข้อความได้ไม่ชัด กรุณากรอกข้อมูลเอง หรือใช้รูปใบเสร็จ/สลิปที่ตัวพิมพ์ชัดเจน';
-    }else if(thaiCount>0 && digitCount>0){
-      $('ocrStatus').textContent='กรอกข้อมูลจากสลิปให้อัตโนมัติแล้ว ✓ ตรวจสอบก่อนบันทึก';
-    }else{
-      $('ocrStatus').textContent='กรอกยอดเงิน วันที่ และรายละเอียดจากสลิปให้อัตโนมัติแล้ว ✓';
-    }
-  }catch(e){$('ocrStatus').textContent='อ่านไม่สำเร็จ ลองถ่ายใหม่ให้ชัดขึ้น'}
-};
+window.clearFile=()=>{currentFile=null;if(previewUrl)URL.revokeObjectURL(previewUrl);previewUrl="";$('receiptFile').value='';$('receiptBox').classList.add('hidden')};
 
 window.saveTx=async()=>{
   const amount=+$('txAmount').value;if(!amount)return toast('กรุณาใส่จำนวนเงิน');
@@ -223,7 +161,7 @@ window.saveTx=async()=>{
       account:$('txAccount').value,category:$('txCategory').value,note:$('txNote').value,
       withheld:+$('txWithheld').value||0,taxDeductible:$('txType').value==='expense'&&$('taxDeductible').checked,
       extras:Object.fromEntries([...document.querySelectorAll('[data-extra]')].map(x=>[x.dataset.extra,x.value])),
-      receiptURL,receiptPath,ocrText:$('ocrRaw').value||'',createdAt:serverTimestamp()
+      receiptURL,receiptPath,createdAt:serverTimestamp()
     });
     closeM('txModal');clearFile();$('txAmount').value='';$('txNote').value='';toast('บันทึกและซิงก์แล้ว ✓');
   }catch(e){console.error(e);toast('บันทึกไม่สำเร็จ: '+e.message)}
