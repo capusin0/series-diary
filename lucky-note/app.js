@@ -78,13 +78,21 @@ function friendlyAuthMessage(e,mode='login'){
     'auth/invalid-credential':'อีเมลหรือรหัสผ่านไม่ถูกต้อง',
     'auth/user-not-found':'ยังไม่พบบัญชีนี้ ลองกด “สร้างบัญชี” ก่อน',
     'auth/wrong-password':'รหัสผ่านไม่ถูกต้อง',
-    'auth/email-already-in-use':'อีเมลนี้มีบัญชีอยู่แล้ว กรุณากด “เข้าสู่ระบบ”',
-    'auth/weak-password':'รหัสผ่านสั้นเกินไป กรุณาใช้อย่างน้อย 6 ตัวอักษร',
+    'auth/email-already-in-use':'อีเมลนี้มีบัญชีอยู่แล้ว กรุณากด “เข้าสู่ระบบ” หรือใช้ Google',
+    'auth/weak-password':'รหัสผ่านไม่ผ่านเงื่อนไข กรุณาใช้รหัสผ่านที่ยาวและเดายากขึ้น',
+    'auth/operation-not-allowed':'Firebase ยังไม่ได้เปิดวิธีเข้าสู่ระบบนี้ — กรุณาเปิด Authentication > Sign-in method ก่อน',
+    'auth/admin-restricted-operation':'Firebase ยังไม่อนุญาตให้สร้างบัญชีด้วยวิธีนี้',
     'auth/popup-closed-by-user':'ยกเลิกการเข้าสู่ระบบด้วย Google',
-    'auth/popup-blocked':'Safari บล็อกหน้าต่าง Google กรุณาอนุญาต Pop-up แล้วลองใหม่',
-    'auth/unauthorized-domain':'โดเมนนี้ยังไม่ได้รับอนุญาตใน Firebase Authentication'
+    'auth/popup-blocked':'Safari บล็อกหน้าต่าง Google กรุณาเปิดเว็บใน Safari โดยตรง แล้วลองใหม่',
+    'auth/cancelled-popup-request':'มีหน้าต่างเข้าสู่ระบบ Google เปิดอยู่แล้ว',
+    'auth/unauthorized-domain':'โดเมน capusin0.github.io ยังไม่ได้รับอนุญาตใน Firebase Authentication',
+    'auth/network-request-failed':'เชื่อมต่อ Firebase ไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ตแล้วลองใหม่',
+    'auth/too-many-requests':'ลองเข้าสู่ระบบหลายครั้งเกินไป กรุณารอสักครู่แล้วลองใหม่',
+    'auth/web-storage-unsupported':'เบราว์เซอร์นี้ไม่อนุญาตการเก็บสถานะล็อกอิน กรุณาเปิดใน Safari โดยตรง',
+    'auth/internal-error':'Firebase มีข้อผิดพลาดภายใน กรุณาลองใหม่'
   };
-  return map[code] || (mode==='register'?'สร้างบัญชีไม่สำเร็จ กรุณาลองใหม่':'เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่');
+  const base=map[code] || (mode==='register'?'สร้างบัญชีไม่สำเร็จ':'เข้าสู่ระบบไม่สำเร็จ');
+  return `${base}${code?`\nรหัส: ${code}`:''}`;
 }
 $('loginBtn').onclick=async()=>{const v=authValues();if(!v)return;$('authMsg').textContent='กำลังเข้าสู่ระบบ…';try{await signInWithEmailAndPassword(auth,v.email,v.password)}catch(e){$('authMsg').textContent=friendlyAuthMessage(e,'login')}};
 $('registerBtn').onclick=async()=>{const v=authValues();if(!v)return;if(v.password.length<6){$('authMsg').textContent='รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร';$('authPassword').focus();return;}$('authMsg').textContent='กำลังสร้างบัญชี…';try{await createUserWithEmailAndPassword(auth,v.email,v.password);toast('สร้างบัญชีแล้ว ✓')}catch(e){$('authMsg').textContent=friendlyAuthMessage(e,'register')}};
