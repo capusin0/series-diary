@@ -157,8 +157,24 @@ window.scanReceipt=async()=>{
   if(!currentFile)return toast('เลือกรูปก่อน');$('ocrStatus').innerHTML='<span class="spinner"></span> กำลังอ่านข้อความ';
   try{
     const r=await Tesseract.recognize(currentFile,'tha+eng',{logger:m=>{if(m.status==='recognizing text')$('ocrStatus').textContent=`อ่านข้อความ ${Math.round((m.progress||0)*100)}%`}});
-    const p=parseOCR(r.data.text);$('ocrRaw').value=p.raw;$('ocrRawWrap').classList.remove('hidden');if(p.amount)$('txAmount').value=p.amount.toFixed(2);if(p.date)$('txDate').value=p.date;if(p.merchant)$('txNote').value=p.merchant;
-    $('ocrStatus').textContent='อ่านเสร็จแล้ว ✓ ตรวจข้อมูลก่อนบันทึก';
+    const p=parseOCR(r.data.text);
+    const raw=(p.raw||'').trim();
+    const thaiCount=(raw.match(/[ก-๙]/g)||[]).length;
+    const latinCount=(raw.match(/[A-Za-z]/g)||[]).length;
+    const digitCount=(raw.match(/[0-9]/g)||[]).length;
+    const useful=thaiCount+latinCount+digitCount;
+    $('ocrRaw').value=raw;
+    $('ocrRawWrap').classList.remove('hidden');
+    // Auto-fill only high-confidence structured values. Never copy a guessed merchant/nonsense text into note.
+    if(p.amount && p.amount>0)$('txAmount').value=p.amount.toFixed(2);
+    if(p.date)$('txDate').value=p.date;
+    if(useful<8){
+      $('ocrStatus').textContent='อ่านข้อความได้ไม่ชัด กรุณากรอกข้อมูลเอง หรือใช้รูปใบเสร็จ/สลิปที่ตัวพิมพ์ชัดเจน';
+    }else if(thaiCount>0 && digitCount>0){
+      $('ocrStatus').textContent='อ่านข้อมูลเบื้องต้นแล้ว ✓ กรุณาตรวจยอดและวันที่ก่อนบันทึก (ลายมือไทยอาจอ่านคลาดเคลื่อน)';
+    }else{
+      $('ocrStatus').textContent='อ่านข้อมูลเบื้องต้นแล้ว ✓ กรุณาตรวจข้อมูลก่อนบันทึก';
+    }
   }catch(e){$('ocrStatus').textContent='อ่านไม่สำเร็จ ลองถ่ายใหม่ให้ชัดขึ้น'}
 };
 
