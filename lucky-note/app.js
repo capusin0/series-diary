@@ -147,11 +147,40 @@ window.renderExtras=()=>{const f=FIELDS[$('txCategory').value]||[["detail","ร�
 window.previewFile=e=>{const f=e.target.files?.[0];if(!f)return;if(!f.type.startsWith('image/'))return toast('กรุณาเลือกรูปภาพ');if(f.size>8*1024*1024)return toast('รูปใหญ่เกิน 8 MB');currentFile=f;previewUrl=URL.createObjectURL(f);$('receiptPreview').src=previewUrl;$('receiptBox').classList.remove('hidden')};
 window.clearFile=()=>{currentFile=null;if(previewUrl)URL.revokeObjectURL(previewUrl);previewUrl="";$('receiptFile').value='';$('receiptBox').classList.add('hidden');$('ocrRaw').value='';$('ocrRawWrap').classList.add('hidden');$('ocrStatus').textContent=''};
 function parseOCR(text){
-  const th='๐๑๒๓๔๕๖๗๘๙';text=(text||'').replace(/[๐-๙]/g,d=>String(th.indexOf(d))).replace(/\r/g,'');
-  let amount=null;for(const p of[/(?:ยอด|รวม|สุทธิ|จำนวนเงิน|total|amount)[^\d]{0,20}([\d,]+(?:\.\d{1,2})?)/i,/([\d,]+(?:\.\d{2}))\s*(?:บาท|THB)?/i]){const m=text.match(p);if(m){amount=parseFloat(m[1].replace(/,/g,''));if(!isNaN(amount))break}}
-  let date='';let m=text.match(/\b(20\d{2})[-\/](\d{1,2})[-\/](\d{1,2})\b/);if(m)date=`${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;else{m=text.match(/\b(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})\b/);if(m){let y=+m[3];if(y<100)y+=2000;if(y>2400)y-=543;date=`${y}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`}}
-  const lines=text.split('\n').map(x=>x.trim()).filter(Boolean), skip=/(โอนเงิน|สำเร็จ|transaction|ref|เลขที่|ยอด|บาท|เวลา|วันที่|amount|total|ธนาคาร|บัญชี)/i;
-  return {amount,date,merchant:lines.find(x=>x.length>=3&&x.length<=60&&!skip.test(x))||'',raw:text};
+  const th='๐๑๒๓๔๕๖๗๘๙';
+  text=(text||'').replace(/[๐-๙]/g,d=>String(th.indexOf(d))).replace(/\r/g,'');
+  const clean=s=>(s||'').replace(/\s+/g,' ').trim();
+  const lines=text.split('\n').map(clean).filter(Boolean);
+
+  let amount=null;
+  const amountPatterns=[
+    /(?:ยอดสุทธิ|ยอดรวมทั้งสิ้น|ยอดรวม|รวมเงิน|จำนวนเงิน|ยอดชำระ|total\s*amount|grand\s*total|total|amount)[^\d]{0,30}([\d,]+(?:\.\d{1,2})?)/i,
+    /([\d,]+\.\d{2})\s*(?:บาท|THB|฿)/i
+  ];
+  for(const p of amountPatterns){const m=text.match(p);if(m){const n=parseFloat(m[1].replace(/,/g,''));if(Number.isFinite(n)){amount=n;break}}}
+  if(!amount){
+    const candidates=[...text.matchAll(/(?:^|\s)(\d{1,3}(?:,\d{3})*(?:\.\d{2})|\d+\.\d{2})(?=\s|$|บาท|฿)/gm)]
+      .map(m=>parseFloat(m[1].replace(/,/g,''))).filter(n=>Number.isFinite(n)&&n>0&&n<100000000);
+    if(candidates.length) amount=Math.max(...candidates);
+  }
+
+  let date='';
+  let m=text.match(/\b(20\d{2})[-\/](\d{1,2})[-\/](\d{1,2})\b/);
+  if(m) date=`${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+  else{
+    m=text.match(/\b(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})\b/);
+    if(m){let y=+m[3];if(y<100)y+=2000;if(y>2400)y-=543;date=`${y}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;}
+  }
+
+  const skip=/(ใบเสร็จ|receipt|tax invoice|เลขที่|ref|reference|วันที่|date|เวลา|time|ยอด|รวม|total|amount|บาท|thb|vat|ภาษี|เงินทอน|change|เงินสด|cash|qr|promptpay|พร้อมเพย์|บัญชี|account|สาขา|branch|tel|โทร)/i;
+  const merchant=lines.find(x=>x.length>=3&&x.length<=70&&!skip.test(x)&&!/^[-\d\s.,:/]+$/.test(x))||'';
+
+  const itemLines=lines.filter(x=>{
+    if(skip.test(x)||x===merchant||x.length<3||x.length>100)return false;
+    return /[ก-๙A-Za-z]/.test(x) && /\d/.test(x);
+  }).slice(0,8);
+  const details=itemLines.join(' • ');
+  return {amount,date,merchant,details,raw:text};
 }
 window.scanReceipt=async()=>{
   if(!currentFile)return toast('เลือกรูปก่อน');$('ocrStatus').innerHTML='<span class="spinner"></span> กำลังอ่านข้อความ';
@@ -168,12 +197,14 @@ window.scanReceipt=async()=>{
     // Auto-fill only high-confidence structured values. Never copy a guessed merchant/nonsense text into note.
     if(p.amount && p.amount>0)$('txAmount').value=p.amount.toFixed(2);
     if(p.date)$('txDate').value=p.date;
+    const autoDetail=[p.merchant,p.details].filter(Boolean).join(' — ');
+    if(autoDetail)$('txNote').value=autoDetail;
     if(useful<8){
       $('ocrStatus').textContent='อ่านข้อความได้ไม่ชัด กรุณากรอกข้อมูลเอง หรือใช้รูปใบเสร็จ/สลิปที่ตัวพิมพ์ชัดเจน';
     }else if(thaiCount>0 && digitCount>0){
-      $('ocrStatus').textContent='อ่านข้อมูลเบื้องต้นแล้ว ✓ กรุณาตรวจยอดและวันที่ก่อนบันทึก (ลายมือไทยอาจอ่านคลาดเคลื่อน)';
+      $('ocrStatus').textContent='กรอกข้อมูลจากสลิปให้อัตโนมัติแล้ว ✓ ตรวจสอบก่อนบันทึก';
     }else{
-      $('ocrStatus').textContent='อ่านข้อมูลเบื้องต้นแล้ว ✓ กรุณาตรวจข้อมูลก่อนบันทึก';
+      $('ocrStatus').textContent='กรอกยอดเงิน วันที่ และรายละเอียดจากสลิปให้อัตโนมัติแล้ว ✓';
     }
   }catch(e){$('ocrStatus').textContent='อ่านไม่สำเร็จ ลองถ่ายใหม่ให้ชัดขึ้น'}
 };
