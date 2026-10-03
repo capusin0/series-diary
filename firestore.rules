@@ -2,8 +2,26 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Series Diary เดิม
     match /rooms/{roomId}/series/{seriesId} {
       allow read, create, update, delete: if request.auth != null;
+    }
+
+    // Lucky Note V3 — ผู้ใช้เข้าถึงได้เฉพาะข้อมูลของตัวเอง
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      match /transactions/{document=**} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      match /todos/{document=**} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      match /settings/{document=**} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
     }
   }
 }
