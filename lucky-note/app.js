@@ -9,14 +9,9 @@ import {
   getFirestore, collection, addDoc, doc, deleteDoc, updateDoc, setDoc,
   query, orderBy, onSnapshot, serverTimestamp, getDoc
 } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
-import {
-  getStorage, ref, uploadBytes, getDownloadURL, deleteObject
-} from "https://www.gstatic.com/firebasejs/12.4.0/firebase-storage.js";
-
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const storage = getStorage(app);
 await setPersistence(auth, browserLocalPersistence);
 
 const $=id=>document.getElementById(id);
@@ -27,7 +22,7 @@ const toast=t=>{const el=$('toast');el.textContent=t;el.style.display='block';se
 const THM=["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
 
 let user=null, txs=[], todos=[], settings={deduction:60000,extraTaxExpense:0,customExpenseCategories:[],customIncomeCategories:[]}, unsubTx=null, unsubTodo=null;
-let currentFile=null, previewUrl="", calDate=new Date();
+let calDate=new Date();
 
 const EXPENSES=["ค่าอาหาร","ค่าแรงคนงาน","ค่าผ่อนรถ / ค่าเดินทาง","ค่าน้ำมันรถ","ค่าแก๊ส","ค่าไฟฟ้า","ค่าโทรศัพท์มือถือ","ค่าอินเทอร์เน็ต","ค่าของใช้ในบ้าน","ค่าซื้อของใช้ส่วนตัว","ค่าเล่าเรียน / ค่าใช้จ่ายเกี่ยวกับลูก","ค่ารักษาพยาบาล / ค่ายา","ค่าประกันชีวิต / ประกันสุขภาพ / ประกันรถ","ดอกเบี้ย / ชำระหนี้","ค่าซื้อของออนไลน์","ค่าเสื้อผ้า / รองเท้า / เครื่องแต่งกาย","ค่าความบันเทิง / ดูหนัง / ท่องเที่ยว","ค่าสมาชิกแอป / Streaming / Subscription","ค่าเลี้ยงสัตว์","ค่าใช้จ่ายสวน","ค่ากาแฟ","ค่าเซเว่น","โอนระหว่างบัญชี","สมาชิกในบ้าน","ของขวัญลูก","อื่น ๆ"];
 const INCOMES=["รายได้จากเกษตรกรรม","เงินปันผล","โอนระหว่างบัญชี","มีคนให้","เงินกู้","รายได้ออนไลน์","ค่าจ้าง / รายได้เสริม","ขายสินค้า / บริการ","ดอกเบี้ยรับ","อื่น ๆ"];
@@ -140,7 +135,7 @@ window.switchPage=id=>{document.querySelectorAll('.page').forEach(x=>x.classList
 document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>switchPage(b.dataset.page));
 window.closeM=id=>$(id).classList.remove('show');
 
-window.openTx=()=>{$('txDate').value=today();window.clearFile();window.updateCats();$('txModal').classList.add('show')};
+window.openTx=()=>{$('txDate').value=today();window.updateCats();$('txModal').classList.add('show')};
 window.updateCats=()=>{
   const expense=$('txType').value==='expense';
   const base=expense?EXPENSES:INCOMES;
@@ -167,34 +162,25 @@ window.addCustomCategory=async()=>{
   toast('เพิ่มหมวด “'+name+'” แล้ว ✓');
 };
 
-window.previewFile=e=>{const f=e.target.files?.[0];if(!f)return;if(!f.type.startsWith('image/'))return toast('กรุณาเลือกรูปภาพ');if(f.size>8*1024*1024)return toast('รูปใหญ่เกิน 8 MB');currentFile=f;previewUrl=URL.createObjectURL(f);$('receiptPreview').src=previewUrl;$('receiptBox').classList.remove('hidden')};
-window.clearFile=()=>{currentFile=null;if(previewUrl)URL.revokeObjectURL(previewUrl);previewUrl="";$('receiptFile').value='';$('receiptBox').classList.add('hidden')};
 
 window.saveTx=async()=>{
   const amount=+$('txAmount').value;if(!amount)return toast('กรุณาใส่จำนวนเงิน');
   const btn=$('saveTxBtn');btn.disabled=true;btn.innerHTML='<span class="spinner"></span> กำลังบันทึก';
   try{
-    let receiptURL='',receiptPath='';
-    if(currentFile){
-      receiptPath=`users/${user.uid}/receipts/${Date.now()}-${currentFile.name.replace(/[^\w.\-]+/g,'_')}`;
-      const sr=ref(storage,receiptPath);await uploadBytes(sr,currentFile,{contentType:currentFile.type});receiptURL=await getDownloadURL(sr);
-    }
     await addDoc(collection(db,'users',user.uid,'transactions'),{
       type:$('txType').value,date:$('txDate').value||today(),amount,
       account:$('txAccount').value,category:$('txCategory').value,note:$('txNote').value,
       withheld:+$('txWithheld').value||0,taxDeductible:$('txType').value==='expense'&&$('taxDeductible').checked,
-      extras:Object.fromEntries([...document.querySelectorAll('[data-extra]')].map(x=>[x.dataset.extra,x.value])),
-      receiptURL,receiptPath,createdAt:serverTimestamp()
+      extras:Object.fromEntries([...document.querySelectorAll('[data-extra]')].map(x=>[x.dataset.extra,x.value])),createdAt:serverTimestamp()
     });
-    closeM('txModal');clearFile();$('txAmount').value='';$('txNote').value='';toast('บันทึกและซิงก์แล้ว ✓');
+    closeM('txModal');$('txAmount').value='';$('txNote').value='';toast('บันทึกและซิงก์แล้ว ✓');
   }catch(e){console.error(e);toast('บันทึกไม่สำเร็จ: '+e.message)}
   finally{btn.disabled=false;btn.textContent='บันทึกขึ้น Cloud'}
 };
 window.deleteTx=async id=>{
-  const x=txs.find(t=>t.id===id);if(!confirm('ลบรายการนี้หรือไม่?'))return;
-  try{if(x?.receiptPath)await deleteObject(ref(storage,x.receiptPath)).catch(()=>{});await deleteDoc(doc(db,'users',user.uid,'transactions',id));toast('ลบแล้ว')}catch(e){toast(e.message)}
+  if(!confirm('ลบรายการนี้หรือไม่?'))return;
+  try{await deleteDoc(doc(db,'users',user.uid,'transactions',id));toast('ลบแล้ว')}catch(e){toast(e.message)}
 };
-window.showImg=url=>{$('bigImg').src=url;$('imgModal').classList.add('show')};
 
 window.openTodo=()=>{$('todoDate').value=today();$('todoModal').classList.add('show')};
 window.saveTodo=async()=>{const text=$('todoText').value.trim();if(!text)return toast('ใส่งานก่อน');await addDoc(collection(db,'users',user.uid,'todos'),{text,date:$('todoDate').value||today(),category:$('todoCat').value,done:false,createdAt:serverTimestamp()});$('todoText').value='';closeM('todoModal')};
@@ -208,10 +194,9 @@ function taxData(){
   net=Math.max(0,income-expense-(settings.extraTaxExpense||0)-(settings.deduction||0)),gross=calcTax(net);return{income,expense,withheld,net,gross,due:gross-withheld};
 }
 function extraText(x){return x.extras?Object.values(x.extras).filter(Boolean).join(' • '):''}
-function receipt(x){return x.receiptURL?`<img class="thumb" src="${x.receiptURL}" onclick="showImg('${x.receiptURL.replace(/'/g,"%27")}')">`:''}
 function rows(list,compact=false){
   if(!list.length)return'<div class="empty">ยังไม่มีรายการ</div>';
-  return `<table><tbody>${list.map(x=>`<tr><td>${x.date||''}</td><td><b>${x.category||''}</b><div class="sub">${x.note||''}</div><div class="sub">${extraText(x)}</div>${receipt(x)}</td><td><span class="tag">${x.account||''}</span></td><td class="amount ${x.type}">${x.type==='income'?'+':'-'}${money(x.amount)}</td>${compact?'':`<td><button class="btn danger" onclick="deleteTx('${x.id}')">ลบ</button></td>`}</tr>`).join('')}</tbody></table>`;
+  return `<table><tbody>${list.map(x=>`<tr><td>${x.date||''}</td><td><b>${x.category||''}</b><div class="sub">${x.note||''}</div><div class="sub">${extraText(x)}</div></td><td><span class="tag">${x.account||''}</span></td><td class="amount ${x.type}">${x.type==='income'?'+':'-'}${money(x.amount)}</td>${compact?'':`<td><button class="btn danger" onclick="deleteTx('${x.id}')">ลบ</button></td>`}</tr>`).join('')}</tbody></table>`;
 }
 function render(){
   if(!user)return;
