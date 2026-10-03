@@ -26,7 +26,7 @@ const uid=()=>crypto.randomUUID?.() || Date.now()+"-"+Math.random();
 const toast=t=>{const el=$('toast');el.textContent=t;el.style.display='block';setTimeout(()=>el.style.display='none',2600)};
 const THM=["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
 
-let user=null, txs=[], todos=[], settings={deduction:60000,extraTaxExpense:0}, unsubTx=null, unsubTodo=null;
+let user=null, txs=[], todos=[], settings={deduction:60000,extraTaxExpense:0,customExpenseCategories:[],customIncomeCategories:[]}, unsubTx=null, unsubTodo=null;
 let currentFile=null, previewUrl="", calDate=new Date();
 
 const EXPENSES=["ค่าอาหาร","ค่าแรงคนงาน","ค่าผ่อนรถ / ค่าเดินทาง","ค่าน้ำมันรถ","ค่าแก๊ส","ค่าไฟฟ้า","ค่าโทรศัพท์มือถือ","ค่าอินเทอร์เน็ต","ค่าของใช้ในบ้าน","ค่าซื้อของใช้ส่วนตัว","ค่าเล่าเรียน / ค่าใช้จ่ายเกี่ยวกับลูก","ค่ารักษาพยาบาล / ค่ายา","ค่าประกันชีวิต / ประกันสุขภาพ / ประกันรถ","ดอกเบี้ย / ชำระหนี้","ค่าซื้อของออนไลน์","ค่าเสื้อผ้า / รองเท้า / เครื่องแต่งกาย","ค่าความบันเทิง / ดูหนัง / ท่องเที่ยว","ค่าสมาชิกแอป / Streaming / Subscription","ค่าเลี้ยงสัตว์","ค่าใช้จ่ายสวน","ค่ากาแฟ","ค่าเซเว่น","โอนระหว่างบัญชี","สมาชิกในบ้าน","ของขวัญลูก","อื่น ๆ"];
@@ -120,7 +120,7 @@ async function loadSettings(){
   $('deduction').value=settings.deduction||0;$('extraTaxExpense').value=settings.extraTaxExpense||0;
 }
 async function saveSettings(){
-  settings={deduction:+$('deduction').value||0,extraTaxExpense:+$('extraTaxExpense').value||0};
+  settings={...settings,deduction:+$('deduction').value||0,extraTaxExpense:+$('extraTaxExpense').value||0};
   await setDoc(doc(db,'users',user.uid,'settings','main'),settings,{merge:true});render();
 }
 $('deduction').addEventListener('change',saveSettings);$('extraTaxExpense').addEventListener('change',saveSettings);
@@ -140,9 +140,32 @@ window.switchPage=id=>{document.querySelectorAll('.page').forEach(x=>x.classList
 document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>switchPage(b.dataset.page));
 window.closeM=id=>$(id).classList.remove('show');
 
-window.openTx=()=>{$('txDate').value=today();clearFile();updateCats();$('txModal').classList.add('show')};
-window.updateCats=()=>{const arr=$('txType').value==='expense'?EXPENSES:INCOMES;$('txCategory').innerHTML=arr.map(x=>`<option>${x}</option>`).join('');$('taxDeductible').disabled=$('txType').value!=='expense';renderExtras()};
+window.openTx=()=>{$('txDate').value=today();window.clearFile();window.updateCats();$('txModal').classList.add('show')};
+window.updateCats=()=>{
+  const expense=$('txType').value==='expense';
+  const base=expense?EXPENSES:INCOMES;
+  const custom=expense?(settings.customExpenseCategories||[]):(settings.customIncomeCategories||[]);
+  const arr=[...new Set([...base,...custom])];
+  $('txCategory').innerHTML=arr.map(x=>`<option>${x}</option>`).join('');
+  $('taxDeductible').disabled=!expense;
+  window.renderExtras();
+};
 window.renderExtras=()=>{const f=FIELDS[$('txCategory').value]||[["detail","รายละเอียดเพิ่มเติม","text"]];$('extraFields').innerHTML=f.map(([k,l,t,o])=>`<div class="field"><label>${l}</label>${t==='select'?`<select data-extra="${k}">${o.map(v=>`<option>${v}</option>`).join('')}</select>`:`<input data-extra="${k}" type="${t}" placeholder="${l}">`}</div>`).join('')};
+window.addCustomCategory=async()=>{
+  const name=$('newCategory').value.trim();
+  if(!name)return toast('พิมพ์ชื่อหมวดก่อน');
+  const expense=$('txType').value==='expense';
+  const key=expense?'customExpenseCategories':'customIncomeCategories';
+  const base=expense?EXPENSES:INCOMES;
+  if(base.includes(name)||(settings[key]||[]).includes(name))return toast('มีหมวดนี้อยู่แล้ว');
+  settings={...settings,[key]:[...(settings[key]||[]),name]};
+  await setDoc(doc(db,'users',user.uid,'settings','main'),settings,{merge:true});
+  $('newCategory').value='';
+  window.window.updateCats();
+  $('txCategory').value=name;
+  window.renderExtras();
+  toast('เพิ่มหมวด “'+name+'” แล้ว ✓');
+};
 
 window.previewFile=e=>{const f=e.target.files?.[0];if(!f)return;if(!f.type.startsWith('image/'))return toast('กรุณาเลือกรูปภาพ');if(f.size>8*1024*1024)return toast('รูปใหญ่เกิน 8 MB');currentFile=f;previewUrl=URL.createObjectURL(f);$('receiptPreview').src=previewUrl;$('receiptBox').classList.remove('hidden')};
 window.clearFile=()=>{currentFile=null;if(previewUrl)URL.revokeObjectURL(previewUrl);previewUrl="";$('receiptFile').value='';$('receiptBox').classList.add('hidden')};
